@@ -1,7 +1,7 @@
 "use client";
 
-import { readFileSync } from "fs";
-import { handleClientScriptLoad } from "next/script";
+// import { readFileSync } from "fs";
+// import { handleClientScriptLoad } from "next/script";
 import React, { useRef } from "react";
 
 interface conversation {

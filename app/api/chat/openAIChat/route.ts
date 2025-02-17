@@ -34,17 +34,12 @@ export async function POST(request: Request) {
         return NextResponse.json({ 
             content: completion.choices[0].message.content 
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         // Detailed error logging
-        console.error('Full error:', {
-            name: error.name,
-            message: error.message,
-            stack: error.stack,
-            response: error.response?.data
-        });
+        console.error('Full error:', error);
         
         return NextResponse.json(
-            { error: error.message || 'Internal Server Error' },
+            { error: 'Internal Server Error' },
             { status: 500 }
         );
     }

@@ -13,7 +13,7 @@ export default function Home() {
           </h1>
           <p className="text-lg sm:text-xl md:text-2xl italic text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
             Welcome to my personal space on the internet. Thanks for your
-            visiting!
+            visiting&aposs;!
           </p>
         </div>
 
