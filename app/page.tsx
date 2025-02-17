@@ -11,9 +11,10 @@ export default function Home() {
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4 leading-tight">
             Hello here is Ying's blog
           </h1>
-          <p className="text-lg sm:text-xl md:text-2xl italic text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+          <p className="text-lg italic text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
             Welcome to my personal space on the internet. Thanks for your
-            visiting&aposs;!
+            visiting! I&apos;m a UofT 3rd Year CS Student, open to work, and
+            working hard to be a full stack engineer.
           </p>
         </div>
 
