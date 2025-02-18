@@ -36,7 +36,17 @@ export default function Home() {
             <ul className="space-y-2 text-gray-600 dark:text-gray-300">
               <li>🎓 UofT 2nd Year CS Undergrad</li>
               <li>💼 Open to Work</li>
-              <li>💻 Working Hard to Be a Full Stack Engineer</li>
+              <li>
+                💻 Check out my{" "}
+                <a
+                  href="https://github.com/xuying7"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 hover:underline"
+                >
+                  GitHub
+                </a>
+              </li>
               <li>📧 xuying4771@outlook.com</li>
             </ul>
           </div>
