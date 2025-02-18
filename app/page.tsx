@@ -13,8 +13,7 @@ export default function Home() {
           </h1>
           <p className="text-lg italic text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
             Welcome to my personal space on the internet. Thanks for your
-            visiting! I&apos;m a UofT 3rd Year CS Student, open to work, and
-            working hard to be a full stack engineer.
+            visiting!
           </p>
         </div>
 

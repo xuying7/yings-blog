@@ -18,7 +18,7 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
-  padding: 5rem;
+  padding: 1rem;
   background-color: #f2f2ec;
   color: #333;
 }
