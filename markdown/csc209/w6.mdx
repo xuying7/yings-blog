@@ -1,0 +1,412 @@
+# Week 6
+
+## typedef
+
+- Basic data types
+
+```c
+typedef unsigned int uint;
+uint x = 10;  // Equivalent to unsigned int x = 10;
+```
+
+- For struct
+
+```c
+struct Point {
+    int x;
+    int y;
+};
+
+struct Point p1;  // Need to use "struct Point"
+
+typedef struct {
+    int x;
+    int y;
+} Point;
+
+Point p1;  // Now we can use "Point" directly instead of "struct Point"
+
+```
+
+- With pointers>
+
+```c
+typedef int* IntPtr;
+
+int main() {
+    IntPtr a, b;  // ❌ Only `a` is an int pointer, `b` is just an int!
+    int x = 10;
+    a = &x;  // ✅ Okay
+    b = &x;  // ❌ Compiler Error: Assigning int* to int
+
+    return 0;
+}
+
+```
+
+- `typedef` **does not remove type safety**—the compiler still enforces type rules.
+- If you pass the wrong type to a function, the **compiler will give an error**.
+- `typedef` is just an alias—it does not create a **new** type.
+- Be careful when using `typedef` with pointers to avoid unintended type mismatches.
+
+## Macros
+
+`#define MACRO_NAME replacement_text`
+
+### Object Like
+
+```c
+#define PI 3.14159
+#define MAX_SIZE 100
+
+int main() {
+    double area = PI * 5 * 5;  // Replaces PI with 3.14159
+    int arr[MAX_SIZE];         // Replaces MAX_SIZE with 100
+}
+
+```
+
+### Function like
+
+```c
+#define SQUARE(x) ((x) * (x))  // Function-like macro
+
+int main() {
+    int a = 5;
+    int result = SQUARE(a);   // Expands to ((5) * (5))
+}
+// always use parentheses and 注意空格！！！
+```
+
+⚠️ **Beware of missing parentheses!** If we define:
+
+```c
+#define SQUARE(x) x * x
+```
+
+Then `SQUARE(5+1)` expands to `5+1 * 5+1 = 5 + 5 + 1 = 11`, **which is wrong**. Always use **parentheses**!
+
+# Preprocessor directive
+
+- Every line start with # is the preprocessor directive. Strictly speaking not a part of c language.
+- Which modifies the source code **before** it is compiled by the compiler.
+- All defined macros are capitalized.
+
+The **C preprocessor (`cpp`)** is a tool that processes source code **before** it is compiled. It handles **preprocessor directives** (commands that start with `#`), such as `#include`, `#define`, and `#ifdef`.
+
+💡 **Think of `cpp` as a "text preprocessor"** that modifies your code before passing it to the compiler.
+
+#### **What Happens When You Compile a C Program?**
+
+When you compile a C program (`gcc main.c -o main`), the process follows these steps:
+
+1️⃣ **Preprocessing (`cpp`)** → Handles `#include`, `#define`, etc.  
+2️⃣ **Compilation (`cc1`)** → Translates C code into assembly.  
+3️⃣ **Assembly (`as`)** → Converts assembly into machine code.  
+4️⃣ **Linking (`ld`)** → Combines multiple object files into an executable.
+
+📌 The **preprocessor (`cpp`) runs first**, replacing macros, including files, and conditionally compiling code
+
+- `ccp` work by executing all the directives and expanding all the macros. This ultimately creates a stream of tokens that are passed to the compilers parser. When the preprocessor executers this pound define directive, all instances of the string are replaced with the string value. 42. The Preprocessor doesn't care that 42 is an integer. It just replaced text with text.
+
+#### **1. `#define` – Macro Definition**
+
+- Defines a macro to replace a **name with a value**.
+- The **preprocessor replaces text**—it does **not** understand types.
+
+#### **Example: Defining a Macro**
+
+```c
+#define MY_INT (42)
+// Defines MY_INT as 42 int x = MY_INT;
+// Becomes: int x = 42;
+```
+
+✅ **Best Practice:** Use **parentheses** to avoid operator precedence issues.
+
+- When preprocessor compile, all thing about `MY_INT` will replaced by _string_ 42. Preprocessor respect the use of quotes to define strings, so with quote will not be replaced.
+- Preprocessor is looking for whole tokens, so it won't replace part by `MY_INTs`
+-
+
+### **Macro Expansion Example**
+
+```c
+#define PI 3.14159
+#define AREA(r) (PI * (r) * (r))
+// Function-like macro
+int main() {
+	double area = AREA(5);
+	// Becomes: 3.14159 * (5) * (5) }
+```
+
+⚠️ **Warning:** The preprocessor only does **text replacement**, so **be careful with complex expressions**.
+
+---
+
+#### **2. `#include` – Including Files**
+
+- **Includes header files** into source files.
+- The **preprocessor copies the file's content** into the source file.
+
+##### **Example: System and User Headers**
+
+```c
+#include <stdio.h>
+// Standard library header #include "myheader.h"
+// User-defined header (searched in current directory)
+```
+
+💡 **Preprocessor replaces `#include "myheader.h"` with the actual content of `myheader.h`.**
+
+---
+
+#### **3. `#ifdef`, `#ifndef`, `#if`, `#elif`, `#else`, `#endif` – Conditional Compilation**
+
+- Used to **include or exclude** parts of code based on conditions.
+- Useful for **platform-specific** or **debugging** code.
+
+##### **Example: Platform-Specific Compilation**
+
+```c
+#include <stdio.h>
+
+#if __APPLE__
+const char OS_STR[] = "OS/X";
+#elif __gnu_linux__
+const char OS_STR[] = "gnu/linux";
+#else
+const char OS_STR[] = "unknown";
+#endif
+
+int main() {
+  printf("Compiled on %s\n", OS_STR);
+  return 0;
+}
+```
+
+💡 **Tip:** Use `#ifdef` when you **only** care about whether a macro is defined.  
+💡 `#if` is better when checking a macro's **value**. In the `if ` statement, if the value is return to 1, it will return. but `ifdef` if the value is defined, so return true. Since they only define in their own system, so this two version is equivalent.
+
+```c
+#include <stdio.h>
+
+#ifdef __APPLE__
+const char OS_STR[] = "OS/X";
+#elif defined(__gnu_linux__)
+const char OS_STR[] = "gnu/linux";
+#else
+const char OS_STR[] = "unknown";
+#endif
+
+int main() {
+  printf("Compiled on %s\n", OS_STR);
+  return 0;
+}
+```
+
+---
+
+### **5. Predefined Macros**
+
+- The preprocessor provides built-in macros for **debugging and system info**.
+
+| Macro      | Meaning                                    |
+| ---------- | ------------------------------------------ |
+| `__FILE__` | Current file name                          |
+| `__LINE__` | Current line number                        |
+| `__DATE__` | Compilation date                           |
+| `__TIME__` | Compilation time                           |
+| `__STDC__` | Compiler follows ANSI C standard (1 = Yes) |
+
+##### **Example**
+
+````c
+printf("File: %s, Line: %d\n", __FILE__, __LINE__);
+printf("Compiled on: %s at %s\n", __DATE__, __TIME__);```
+
+---
+### Debug
+
+```c
+#include <stdio.h>
+
+int main() {
+
+#ifdef DEBUG
+    printf("Running in debug mode at level %d\n", DEBUG);
+#endif
+
+    return 0;
+}
+````
+
+📌 **What Happens Here?**
+
+- The `#ifdef DEBUG` directive checks **if `DEBUG` is defined**.
+- If `DEBUG` is defined, the `printf` statement **will be included** in the compiled code.
+- If `DEBUG` is **not** defined, the `printf` statement will be **ignored**.
+
+Then we use the compilation command
+
+```sh
+gcc -D DEBUG=3 ex6.c
+```
+
+📌 **What Does `-D DEBUG=3` Do?**
+
+- The `-D` flag defines a **macro from the command line**.
+- `DEBUG=3` means **`DEBUG` is defined with a value of `3`**.
+- When the compiler preprocesses `ex6.c`, it **replaces** `DEBUG` with `3`.
+
+Ex.
+suppose we have the following line at the top of our program  
+`#define MAXNAME = 32;  `
+and then the declaration  
+`char name[MAXNAME];  `
+in the program. What will this declaration line become after the program has passed  
+through the C pre-processor?
+
+ANS: `char name[=32;];`
+
+## Function like MACRO
+
+- Not recommend write!
+
+```c
+#include <stdio.h>
+
+#define PAGE_PRESENT  0
+#define PAGE_PROT     1
+#define PAGE_RW       2
+#define PAGE_USER     3
+#define PAGE_DIRTY    4
+#define PAGE_ACCESSED 5
+
+#define SET(var, flag)   ((var) |= 1 << (flag))
+#define ISSET(var, flag) ((var) & (1 << (flag)))
+
+#define WARN(cond) \
+    do { \
+        if (cond) fprintf(stderr, "Warning (%s:%d): %s\n", __FILE__, __LINE__, #cond); \
+    } while (0)
+
+/*
+Step 5: You can do everything that you did with the macro
+        by using a regular C language features instead.
+
+enum page_flags {
+ PAGE_PRESENT,
+ PAGE_PROT,
+ PAGE_RW,
+ PAGE_USER,
+ PAGE_DIRTY,
+ PAGE_ACCESSED
+};
+
+static inline void SET(int *var, int flag) {
+    (*var) |= 1 << flag;
+}
+*/
+
+
+int main() {
+    int page_flag = 0;
+    SET(page_flag, PAGE_USER);
+    printf("PAGE_USER: %d\n", page_flag);
+
+    page_flag = 0;
+    SET(page_flag, PAGE_DIRTY);
+    printf("PAGE_DIRTY: %d\n", page_flag);
+
+    // Step 2: add nested macros
+    //WARN(ISSET(page_flag, PAGE_USER));
+
+    // Step 3: nest the SET macro inside a printf statement
+    printf("%d\n", SET(page_flag, PAGE_DIRTY));
+
+    // Step 4: nest the SET macro inside another application of the SET macro
+    //         what goes wrong now?
+    SET(SET(page_flag, PAGE_USER), PAGE_DIRTY);
+
+    return 0;
+}
+```
+
+pageFlag: bitwise shift operation
+
+- `1 << 3` results in `00001000` (binary) → `8` (decimal).
+- `1 << 4` results in `00010000` (binary) → `16` (decimal).
+
+`#define SET(var, flag)  ((var) |= 1 << (flag))`
+
+- - `1 << (flag)` shifts `1` to the left by `flag` bits.
+- `var |=` sets the corresponding bit in `var` to `1` (bitwise OR operation).
+- Effectively, this **marks a specific flag as "enabled"** in `var`.
+
+```
+#define WARN(cond) \
+    do { \
+        if (cond) fprintf(stderr, "Warning (%s:%d): %s\n", __FILE__, __LINE__, #cond); \
+    } while (0)
+
+```
+
+The **`do { ... } while(0);`** construct is a **do-while loop** that **always executes exactly once**. This happens because the condition `0` (false) **immediately stops the loop after the first iteration**.
+
+Why use `do while`?
+First, it enforces our requirement that the warned macro be used as a statement.
+It allows macros to include multiple statements and some of those statements can be local variables. They'll exist within the loop but not outside.
+
+### stringizing
+
+- `#cond` converts `cond` into a string literal, and it allows us to print the actual condition used in macro.
+
+## System Call
+
+- System call: a function that requests a service from the operating system.
+
+`void exist(int status);`
+
+- Low level calls read and write are system calls
+- High level, like `fprintf` and `fscanf`, use `read` and `write`, in their implementation.
+
+when we use `prinf`, printf is library function, that use several helpful call before using the system call.
+
+- **Step 1:** `printf` is called, which takes a format string and arguments.
+- **Step 2:** The format string is parsed, and the output string is constructed.
+- **Step 3:** A buffer is set up, and the formatted string is copied into the buffer.
+- **Step 4:** The system call `write` is used to send the output to the console.
+
+`void perror(const char *s);`
+
+You should use `perror()` **immediately after a system call fails** to provide context about the error.
+
+Common scenarios:
+
+- File operations (`open()`, `fopen()`, `read()`, `write()`, `close()`)
+- Memory allocation (`malloc()`, `calloc()`)
+- Process management (`fork()`, `exec()`)
+- Networking (`socket()`, `connect()`)
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
+
+int main() {
+    FILE *fp = fopen("nonexistent.txt", "r");
+    if (!fp) {
+        printf("Error: %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+    fclose(fp);
+    return 0;
+}
+
+```
+
+# Errors and Errno
+
+没写笔记
+因为实在他妈的没理解在干啥。。。

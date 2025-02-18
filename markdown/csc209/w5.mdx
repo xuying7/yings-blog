@@ -1,0 +1,387 @@
+# Week 5
+
+- [[#Open Files|Open Files]]
+- [[#Binary Files|Binary Files]]
+  - [[#Binary Files#Writing to files|Writing to files]]
+  - [[#Binary Files#Read the file|Read the file]]
+    - [[#Read the file#To check an array:|To check an array:]]
+  - [[#Binary Files#Wav file|Wav file]]
+  - [[#Binary Files#Structs|Structs]]
+  - [[#Binary Files#Moving around in FILES|Moving around in FILES]]
+- [[#Compiling|Compiling]]
+  - [[#Compiling#The compiler toolchain|The compiler toolchain]]
+  - [[#Compiling#Header FIle|Header FIle]]
+  - [[#Compiling#Header Files variables|Header Files variables]]
+  - [[#Compiling#Guard condition|Guard condition]]
+    - [[#Guard condition#Static|Static]]
+  - [[#Compiling#Makefiles|Makefiles]]
+
+## Open Files
+
+`output_file = fopen("myfile.txt", "w");`
+
+- If their already has content exist, use `w` will delete the original content and write new one
+- we can use `a` to append the new content.
+
+Program -> stream -> OS: File Buffer
+
+## Binary Files
+
+后缀 can be `dat`, `mp3`, or nothing
+
+`output_file = fopen("testing.dat", "rb");`
+
+### Writing to files
+
+`size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);`
+
+e.g.
+`error = fwrite(&number, sizeof(int), 1, datafile);`
+
+- `*ptr` is the start pointer of the content (usually array) want to write in.
+- `size` is the size of each elements we want to write.
+- `nmemb` is the number of elements that we are writing to the file. For an individual variable, the parameter is 1. For array, it is typically the number of elements in the array.
+- `*stream` is the file pointer to which we will write.
+
+`data_file = fopen("my_data", "wb");`
+
+- If the file doesn't exist, `fopen` will create the file, if exist, `fopen` will destroy the original contents.
+
+```c
+int numbers[] = {200, 200, 300};
+error = fwrite(numbers, sizeof(int), 3, data_file)
+```
+
+### Read the file
+
+`size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);`
+
+- `*ptr` is the pointer to the memory where the data from the file will be stored.
+- For `fwrite`, the `*ptr` is `const`. But for `fread` we are reading data from the file so it can't be `const`
+- `fread` must be the same order to `fwrite`
+
+#### To check an array:
+
+```c
+fread(numbers, sizeof(int), NUM_ELEMENTS, data_file);
+for (int i = 0; i < NUM_ELEMENTS; i++) {
+	printf("%d ", numbers[i]);
+}
+```
+
+- If we create the file in one machine then want to read in another machine, it might not be read properly (little endian and big-endian)
+
+### Wav file
+
+- `.wav` file is a binary file format that stores sound data.
+- Use `od` to print the wav file
+
+`od -A d -j 44 -t d2 short.wav`
+
+- `-A d` base 8 -> base 10
+- `-j 44` skip the first 44 bytes since that is header
+- `-t d2` tell `od` that the file consists of two-byte values. Each number represents 2 bytes.
+
+Increase the sound of file:
+
+```c
+#include <stdio.h>
+
+#define HEADER_SIZE 44
+
+/* Increases the volume of a .wav file (specified by argv[1]),
+   and saves the altered version as a file whose name is
+   specified by argv[2]. */
+int main(int argc, char *argv[]) {
+    char *input_name, *output_name;
+    FILE *input_wav, *output_wav;
+    short sample;
+    short header[HEADER_SIZE];
+    int error;
+
+    if (argc != 3) {
+        fprintf(stderr, "Usage: %s inputfile outputfile\n", argv[0]);
+        return 1;
+    }
+
+    input_name = argv[1];
+    output_name = argv[2];
+
+    input_wav = fopen(input_name, "rb");
+    if (input_wav == NULL) {
+        fprintf(stderr, "Error: could not open input file\n");
+        return 1;
+    }
+
+    output_wav = fopen(output_name, "wb");
+    if (output_wav == NULL) {
+        fprintf(stderr, "Error: could not open output file\n");
+        return 1;
+    }
+
+    fread(header, HEADER_SIZE, 1, input_wav);
+    error = fwrite(header, HEADER_SIZE, 1, output_wav);
+    if (error != 1) {
+        fprintf(stderr, "Error: could not write a full audio header\n");
+        return 1;
+    }
+
+    while (fread(&sample, sizeof(short), 1, input_wav) == 1) {
+        sample = sample * 4;
+        error = fwrite(&sample, sizeof(short), 1, output_wav);
+        if (error != 1) {
+            fprintf(stderr, "Error: could not write a sample\n");
+            return 1;
+        }
+    }
+
+    error = fclose(input_wav);
+    if (error != 0) {
+        fprintf(stderr, "Error: fclose failed on input file\n");
+        return 1;
+    }
+
+    error = fclose(output_wav);
+    if (error != 0) {
+        fprintf(stderr, "Error: fclose failed on output file\n");
+        return 1;
+    }
+
+    return 0;
+}
+```
+
+### Structs
+
+- Using `fwrite` for stucts
+
+```c
+#include <stdio.h>
+#include <string.h>
+
+int main() {
+    struct student {
+        char first_name[14];
+        char last_name[20];
+        int year;
+        float gpa;
+    };
+
+    FILE *student_file;
+    int error;
+    struct student s;
+
+    student_file = fopen("student_data", "wb");
+    if (student_file == NULL) {
+        fprintf(stderr, "Error: could not open file\n");
+        return 1;
+    }
+
+    strcpy(s.first_name, "Betty");
+    strcpy(s.last_name, "Holberton");
+    s.year = 4;
+    s.gpa = 3.8;
+
+    fwrite(&s, sizeof(struct student), 1, student_file);
+
+    strcpy(s.first_name, "Grace");
+    strcpy(s.last_name, "Hopper");
+    s.year = 6;
+    s.gpa = 3.9;
+
+    fwrite(&s, sizeof(struct student), 1, student_file);
+
+    error = fclose(student_file);
+    if (error != 0) {
+        fprintf(stderr, "Error: fclose failed\n");
+        return 1;
+    }
+
+    return 0;
+}
+```
+
+`od -A d -t u1 student_data`
+
+- `-t u1` means display data as unsigned 1-byte (8 bit) decimal integers.
+
+### Moving around in FILES
+
+`int fseek (FILE *stream, long int offset, int whence);`
+
+- `*stream` is the file position we want to change
+- `offset` is the byte count indicating how much the file position should change
+- `whence`, we have `SEEK_SET`, from the beginning of the file; `SEEK-CUR`, from the current file position; `SEEK_END`, from end of file.
+
+`void rewind(FILE *stream);`
+
+- Move the pointer to the beginning of file.
+
+## Compiling
+
+### The compiler toolchain
+
+![[Screenshot 2025-02-01 at 1.17.19 PM.png]]![[Screenshot 2025-02-01 at 1.19.29 PM.png]]
+
+For different machine, from `.s` to `.o` to `.out`, they are different.
+
+If `gcc` several files, it would run like
+
+![[Screenshot 2025-02-01 at 1.24.06 PM.png]]
+For example, we can use `gcc compare_sorts.c sorts.c`
+Or compile them separately then link them together
+
+```bash
+gcc -c compare_sorts.c
+gcc -c sorts.c
+ls *.o
+compare_sorts sorts.o
+gcc compare_sorts.o sorts.o
+```
+
+- If one file changed, when can just compile that one single file then relink .
+
+### Header FIle
+
+- Compile the file separately, may lead to issue of inconsistent.
+- So we use header file to solve the problem
+- At the beginning, we need to include `#include "sorts.h"`
+
+### Header Files variables
+
+- in `sort.h`, we can define
+
+```c
+extern const int NUM_SORTS;
+extern sort_info SORTS[];
+```
+
+- This makes that we can declare the variable again in each file.
+
+- If we want each file has it own variable, (but same name?) we use `static int x = ...`
+
+### Guard condition
+
+```c
+#ifndef SORTS_H
+#define SORTS_H
+```
+
+- If not define `SORTS_H`, the first time it will create the SORT_H. When it encounter the SORT_H second time, will skip this line.
+- We only need one definition of the variable when we need to link the files together from different executable. So when the first time `.h` is run, it declared the definition. Then for the second time, it skipped the step to create the definition.
+- Otherwise, error will occur when we try to link the documents (**only 1 definition allowed**)
+- At the last line of each file, we need to use `#endif`
+- `dependency`: the source file rely on the header file, so if we change the header file, we need to compile the source file again.
+
+#### Static
+
+```c
+void function_example() {
+	static int x = 3;
+	printf("%d\n", x);
+	x +=2;
+}
+int main() {
+	function_example();
+	function_example();
+	function_example();
+	return 0;
+}
+```
+
+The output would be `3 5 7`
+
+- For the static variable, the value will retain between function calls. It only initialize once, and persists until the program end.
+
+### Makefiles
+
+```c.make
+
+compare_sorts.o: compare_sorts.c sorts.h
+	gcc -c compare_sorts.c -o compare_sorts.o
+
+sorts.o: sorts.c sorts.h
+	gcc -c sorts.c -o sorts.o
+
+compare_sorts: compare_sorts.o sorts.o
+	gcc compare_sorts.c sorts.c -o compare_sorts
+```
+
+The format is
+
+```c
+target: dependency
+	recipe
+```
+
+`touch` updates the last modifies time to the current time, the file contents remain unchanged.
+
+```c
+OBJFILES = compare_sorts.o sorts.o
+
+%.o: %.c sorts.h
+	gcc -c $< -o $@
+
+compare_sorts: $(OBJFILES)
+	echo making this target
+	gcc $(OBJFILES) -o compare_sorts
+
+.PHONY: clean
+clean:
+	rm compare_sorts $(OBJFILES)
+
+```
+
+- `%.o: %.c sorts.h` → This is a **pattern rule**, meaning:
+
+  - Any `.o` file depends on a `.c` file of the same name and `sorts.h` (header file).
+  - If `sorts.h` changes, this rule ensures that the `.o` files are recompiled.
+
+- `gcc -c $< -o $@` → This compiles `.c` files into `.o` files.
+
+  - `$<` → Refers to the first prerequisite (the `.c` file).
+  - `$@` → Refers to the target (the `.o` file).
+  - The `-c` flag tells `gcc` to **compile only**, without linking.
+
+- `compare_sorts: $(OBJFILES)` → The target **`compare_sorts`** depends on the object files (`compare_sorts.o sorts.o`).
+- `echo making this target` → Prints a message before linking.
+- `gcc $(OBJFILES) -o compare_sorts` → Links the object files into the final executable `compare_sorts`.
+
+- `.PHONY` tells `make` that `clean` is **not a real file**, just a name for a cleanup operation.
+
+- `rm compare_sorts $(OBJFILES)` → Deletes the compiled executable (`compare_sorts`) and all object files (`compare_sorts.o sorts.o`).
+- Running `make clean` **removes compiled files**, forcing a full recompilation on the next `make`.
+
+PRAcl
+
+```c
+#####
+
+FLAGS = -Wall -Werror -std=c99
+DEPENDENCIES = ptree.h
+
+all: print_ptree
+
+print_ptree: print_ptree.o ptree.o
+      gcc ${FLAGS} -o $@ $^
+
+%.o: %.c ${DEPENDENCIES}
+      gcc ${FLAGS} -c $<
+
+clean:
+      rm -f *.o print_ptree
+```
+
+What is `rm -f *.o print_ptree`?
+
+- `clean` is a target
+- that line is a recipe
+
+Makeﬁle syntax
+
+| Variable | Meaning                       |
+| -------- | ----------------------------- |
+| $@       | Target                        |
+| $<       | First prerequisite            |
+| $?       | All out of date prerequisites |
+| $^       | All prerequisites             |

@@ -1,0 +1,78 @@
+# Week 3
+
+When allocate the memory, no \* behind
+
+- Define a pointer, then malloc the memory
+
+```c
+int main () {
+	float *rainfall = NULL;
+	rainfall = malloc(sizeof(float));
+}
+```
+
+## Free
+
+```c
+#include <stdlib.h>
+int aaa () {
+	int i;
+	int *pt = malloc(sizeof(int));
+	i = 15;
+	*pt = 49;
+	free(pt);
+}
+```
+
+- free just tell the memory management system to free, doesn't change any value.
+
+- Memory leak: not free.
+
+- Each call to `malloc` need to be free mannully. each call to `free` only free the top level memory in the nested structure.
+
+- We have to free the sub-level memory first.
+
+## string to long
+
+```c
+long int strtol(const char *str, char **endptr, int base)
+```
+
+So here example
+
+```c
+char *s = "   -17";
+char *leftover;
+int i = strtol(s, &leftover, 10);
+```
+
+## argc and argv
+
+```c
+int main(int argc, char **argv) {
+,,,
+...
+
+}
+```
+
+- Need to pay attention to `argc`, it including the name itself you count the number.
+
+## FGETS
+
+The `fgets` function in C is used to read a line of text from a file or standard input (`stdin`). It safely reads up to a specified number of characters, including the newline character `\n` if present.
+
+### Syntax:
+
+`char *fgets(char *str, int n, FILE *stream);`
+
+### Parameters:
+
+1. **`char *str`**: A pointer to a character array (buffer) where the read string will be stored.
+2. **`int n`**: The maximum number of characters to read, including the null terminator `\0`.
+3. **`FILE *stream`**: The input stream to read from, e.g., `stdin` for standard input or a file pointer returned by `fopen`.
+
+## FGETS
+
+- `fget` must be read from standard input
+- `fscanf` can be read from any stream

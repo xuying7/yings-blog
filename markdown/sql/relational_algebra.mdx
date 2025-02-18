@@ -1,0 +1,88 @@
+# Relational Algebra
+
+## Cartesian Product
+
+- The **Cartesian product** $D_1 \times D_2 \times \ldots \times D_n$ is the set of all possible ordered tuples $\langle d_1, d_2, \ldots, d_n \rangle$, where:
+  - $d_1 \in D_1, d_2 \in D_2, \ldots, d_n \in D_n$.
+- This represents every possible combination of values from the sets $D_1, D_2, \ldots, D_n$.
+
+## Mathematical Relation
+
+- A **relation** on $D_1, D_2, \ldots, D_n$ is a **subset** of the Cartesian product $D_1 \times D_2 \times \ldots \times D_n$.
+- In other words, a relation selects some specific tuples from all the possible tuples in the Cartesian product. Not all tuples need to be included in a relation.
+
+## Example
+
+1. Let $D_1 = \{p, q\}$, $D_2 = \{1, 2\}$, and $D_3 = \{A, B\}$.
+
+   - The Cartesian product $D_1 \times D_2 \times D_3$ includes all $2 \times 2 \times 2 = 8$ tuples:
+     $$
+     \{\langle p, 1, A \rangle, \langle p, 1, B \rangle, \langle p, 2, A \rangle, \langle p, 2, B \rangle, \langle q, 1, A \rangle, \langle q, 1, B \rangle, \langle q, 2, A \rangle, \langle q, 2, B \rangle\}
+     $$
+
+2. A relation might only include some tuples, such as:
+   $$
+   \{\langle p, 1, A \rangle, \langle q, 2, B \rangle\}.
+   $$
+
+- This subset is the **relation**, and the Cartesian product provides the "universe" of possible tuples.
+
+## Tips
+
+- A database table is a relation
+
+## Schema vs instance
+
+- Schema: Teams(name, HomeField, Coach)
+  - Schema should change rarely
+- Instance: the table
+
+  - Instances changes constantly,
+
+- Databases that record the history are called _temporal database_
+- ![[Screenshot 2025-01-21 at 6.52.20 PM.png]]
+
+- Every relation has at least one key
+
+- Relation can have one more key
+
+- Key: A minimal set of attributes such that no two tuples can have the same values on all of these attributes
+
+### Foreign Key Constraint Analysis
+
+A **foreign key constraint** ensures that values in attributes $X$ (from relation $R_1$) must correspond to values in attributes $Y$ (from relation $R_2$), where $Y$ is a **key** in $R_2$.
+
+---
+
+#### Statement Analysis:
+
+1. **A foreign key constraint restricts the data that can go in relation $R_1$.**
+
+   - **True**: A foreign key constraint enforces that values in $R_1[X]$ must match existing values in $R_2[Y]$. This restriction directly applies to $R_1$.
+
+2. **A foreign key constraint restricts the data that can go in relation $R_2$.**
+
+   - **False**: A foreign key constraint ensures that $R_1[X]$ references valid values in $R_2[Y]$, but it doesn’t restrict data in $R_2$ itself. New rows can be added to $R_2$ without any issue.
+
+3. **A foreign key constraint is a kind of integrity constraint.**
+
+   - **True**: Foreign key constraints are a type of **referential integrity constraint**, ensuring the consistency of references between relations.
+
+4. **An integrity constraint is a kind of foreign key constraint.**
+
+   - **False**: Integrity constraints include many types (e.g., primary key, uniqueness, check constraints), and foreign key constraints are just one type.
+
+5. **$Y$ must be a key in the table $R_2$.**
+
+   - **True**: For a foreign key constraint, $Y$ must be a key (or unique attribute) in $R_2$, ensuring that $R_1[X]$ references valid and unique rows.
+
+6. **$X$ must be a key in the table $R_1$.**
+   - **False**: $X$ does not need to be a key in $R_1$. For example, multiple rows in $R_1$ can reference the same row in $R_2$.
+
+---
+
+#### Correct Answers:
+
+- ✅ **A foreign key constraint restricts the data that can go in relation $R_1$.**
+- ✅ **A foreign key constraint is a kind of integrity constraint.**
+- ✅ **$Y$ must be a key in the table $R_2$.**

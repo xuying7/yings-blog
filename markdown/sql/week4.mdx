@@ -1,0 +1,253 @@
+# Week 4
+
+SQL is short for “Structured Query Language”, but it is for more than just writing queries. It has two sub-parts:
+
+- DDL (or “Data Definition Language”), used for defining schemas
+- DML (or “Data Manipulation Language”), used for writing queries as well as for modifying the datase.
+
+## Basic SELECT-FROM-WHERE queries
+
+- Student(**sID**, surName, firstName, campus, email, cgpa)
+- Course(**dept, cnum**, name, breadth)
+- Offering(**oID**, dept, cNum, term, instructor)
+- Took(**sID, oID**, grade)
+- _and the foreign key relationships that you will recall_
+
+```sql
+csc343h-prof=> SELECT name             -- choose the column called "name"
+    csc343h-prof-> FROM Course             -- from the Course table
+    csc343h-prof-> WHERE dept = 'CSC';     -- choose only rows that satisfy
+```
+
+- `WHERE` is equivalent to σ in relational algebra.
+
+## Compound conditions in a WHERE clause
+
+We just saw our first compound condition. We can build boolean expressions using:
+
+- logical operators: `=, <, >, <=, >=, !=` and `<>`. The operators `!=` and `<>` mean “not equals” in SQL.
+- boolean operators: `AND`, `OR`, and `NOT`
+
+## Temporarily renaming a table
+
+Similar to ρ in relational algebra, in SQL we can rename a table for the duration of a query. Here we rename `Employee` to `e` and `Deparment` to `d`:
+
+```
+    csc343h-prof=> SELECT e.name, d.name
+    csc343h-prof-> FROM Employee e, Department d
+    csc343h-prof-> WHERE d.name = 'marketing' and e.name = 'Horton';
+```
+
+## Naming columns
+
+We can add an AS-expression to choose a column name in the result of a query.
+
+```
+    csc343h-prof=> SELECT name AS title, dept
+    csc343h-prof-> FROM Course
+    csc343h-prof-> WHERE breadth;
+           title       | dept
+    -------------------+------
+     Intro Archaeology | ANT
+     Narrative         | ENG
+     Rhetoric          | ENG
+     The Graphic Novel | ENG
+     Mediaeval Society | HIS
+     Black Freedom     | HIS
+    (6 rows)
+```
+
+## Sorting
+
+In relational algebra, a relation is a set and so order doesn’t matter. But in the real world, order often does matter. We can sort the results of a query by adding an `ORDER BY` clause to the end of a select-from-where query:
+
+```sql
+    csc343h-prof=> SELECT sid, grade
+    csc343h-prof-> FROM Took
+    csc343h-prof-> WHERE grade > 90
+    csc343h-prof-> ORDER BY grade;
+```
+
+The default is to use ascending order, but we can override this by saying `DESC` (not `DESCENDING`):
+
+```
+    csc343h-prof=> SELECT sid, grade
+    csc343h-prof-> FROM Took
+    csc343h-prof-> WHERE grade > 90
+    csc343h-prof-> ORDER BY grade DESC;
+```
+
+We can order according to multiple columns. Here, we see courses in order by `dept`, and where there are multiple rows with the same value for `dept`, they are further ordered by course `name`.
+
+```
+csc343h-prof=> SELECT *
+csc343h-prof-> FROM Course
+csc343h-prof-> ORDER BY dept, name;
+```
+
+## Expressions in a SELECT clause
+
+Instead of a simple attribute name, you can use an expression in a SELECT clause. Here are two simple examples:
+
+```
+    csc343h-prof=> SELECT sid, grade + 10 AS adjusted
+    csc343h-prof-> FROM Took;
+      sid  | adjusted
+    -------+----------
+     99132 |       89
+     99132 |      108
+     99132 |       92
+     99132 |      109
+     ... etc.
+
+    csc343h-prof=> SELECT dept || cnum
+    csc343h-prof-> FROM Course
+    csc343h-prof-> WHERE cnum < 200;
+     ?column?
+    ----------
+     CSC148
+     EEB150
+     ENG110
+     CSC100
+    (4 rows)
+```
+
+- `||` is string concatenation.
+
+## Expressions that are a constant
+
+Rather than pull values from a table, a SELECT clause can use a constant value in a column. Here is an example:
+
+```
+    csc343h-prof=> SELECT name, 'satisfies' as breadthRequirement
+    csc343h-prof-> FROM Course
+    csc343h-prof-> WHERE breadth;
+           name        | breadthrequirement
+    -------------------+--------------------
+     Intro Archaeology | satisfies
+     Narrative         | satisfies
+     Rhetoric          | satisfies
+```
+
+## Pattern matching
+
+SQL provides the `LIKE` operator for comparing a string to a pattern. The pattern is a quoted string and can include these special characters:
+
+- `_` matches any single character
+- `%` matches any sequence of zero or more characters
+
+Here are two simple examples:
+
+```
+csc343h-prof=> SELECT *
+csc343h-prof-> FROM Course
+csc343h-prof-> WHERE name LIKE '%to%';
+ cnum |           name            | dept | breadth
+------+---------------------------+------+---------
+  343 | Intro to Databases        | CSC  | f
+  148 | Intro to Comp Sci         | CSC  | f
+```
+
+`LIKE` offers an extremely limited form of pattern matching but has the advantage of being fast. SQL also supports regular expressions for string matching, using the `~` operator. For example:
+
+```
+csc343h-prof-> -- Find students whose surname begins with M or F or L, followed
+csc343h-prof-> -- by 'a', and then zero or more additional characters.
+csc343h-dianeh=> SELECT *
+FROM Student
+WHERE surname ~ '(M|F|L)a*';
+```
+
+## Computing on a column
+
+SQL provides functions, such as `sum`, `avg`, `min`, `max` and `count`, that can be used in a SELECT clause to apply to a column. We call this aggregation.
+
+Here is an example showing the basics of aggregation.
+
+```sql
+    -- First we use aggregation to get the average of all the grades in the Took
+    -- table.  Notice that the result has just one tuple, because there is
+    -- just one average:
+    csc343h-prof=> SELECT avg(grade)
+    csc343h-prof-> FROM Took;
+             avg
+    ---------------------
+     75.8545454545454545
+    (1 row)
+
+    -- Notice also that SQL invented a name for this column: the name of the
+    -- aggregation function.  If we do some fancier calculation, it uses the
+    -- column name "?column?":
+    csc343h-prof=> SELECT max(grade) - min(grade)
+    csc343h-prof-> FROM Took;
+     ?column?
+    ----------
+          100
+
+    -- Let's give that column a better name:
+    csc343h-prof=> SELECT max(grade) - min(grade) AS range
+    csc343h-prof-> FROM Took;
+     range
+    -------
+       100
+    (1 row)
+
+    -- count(grade) counts the number of values in the grade column.
+    csc343h-prof=> SELECT count(grade)
+    csc343h-prof-> FROM Took;
+     count
+    -------
+        55
+    (1 row)
+
+    -- If we give count a wildcard instead of a specific column name, we get
+    -- the number of rows in the table.
+    csc343h-prof=> SELECT count(*)
+    csc343h-prof-> FROM Took;
+     count
+    -------
+        55
+    (1 row)
+```
+
+- `count(grade)` and `count(*)` give the same result here: there are as many values in the `grade` column as there are rows in the table. We will learn soon that SQL allows empty cells, and in that case, `count(grade)` – or counting any other column – and `count(*)` could report different values.
+
+## Duplicates contribute
+
+- use `DISTINCT`
+- It does not affect `min` and `max`, but does affect `sum` and `avg`
+
+Consider this:
+
+```
+    csc343h-prof=> SELECT sid, avg(grade)
+    csc343h-prof-> FROM Took;
+    ERROR:  column "Took.sid" must appear in the GROUP BY clause or be used in an aggregate function
+    LINE 1: SELECT sid, avg(grade) FROM Took;
+                   ^
+```
+
+Here we are combining `sid` (of which there are many) with `avg(grade)` (of which there is one). That doesn’t produce a structurally sound table, which is why we get an error. The error message itself will make sense once we understand grouping.
+
+Suppose table R contains this:
+
+a | b
+---+---
+1 | 2
+8 | 7
+5 |
+| 6
+
+and table S contains this:
+
+a | b
+---+---
+3 | 4
+8 | 7
+5 |
+| 6
+
+What is the output of this query?
+a | b
+---+---
+8 | 7

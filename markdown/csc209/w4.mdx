@@ -1,0 +1,395 @@
+# Week 4
+
+Content:
+
+- [[#Strings|Strings]]
+  - [[#Strings#Initialize String|Initialize String]]
+  - [[#Strings#String Literal|String Literal]]
+  - [[#Strings#Common Mistake (about null terminator)|Common Mistake (about null terminator)]]
+  - [[#Strings#Methods/Properties|Methods/Properties]]
+    - [[#Methods/Properties#String length|String length]]
+    - [[#Methods/Properties#Copying String|Copying String]]
+    - [[#Methods/Properties#String concatenation|String concatenation]]
+    - [[#Methods/Properties#Searching String|Searching String]]
+      - [[#Searching String#Searching for a single char|Searching for a single char]]
+      - [[#Searching String#String Searching for String|String Searching for String]]
+- [[#Structs|Structs]]
+  - [[#Structs#Example:|Example:]]
+  - [[#Structs#Using Struct in Functions|Using Struct in Functions]]
+    - [[#Using Struct in Functions#`->` operation|`->` operation]]
+- [[#Linked Struct.|Linked Struct.]]
+  - [[#Linked Struct.#Difference with array|Difference with array]]
+  - [[#Linked Struct.#Traverse.|Traverse.]]
+  - [[#Linked Struct.#Insert|Insert]]
+    - [[#Insert#Testing Insertion.|Testing Insertion.]]
+
+## Strings
+
+- We can use `char text[20]` to create a `String`
+  - But! Inconvenient.
+- `String` is still a `char array`
+- So we need the end character `\0` to mean that is a C string.
+
+```C
+int main() {
+	char text[20]:
+	text[0] = 'a';
+	...
+	text[3] = '\0';
+
+	printf("%s", text);
+	printf("\n");
+}
+```
+
+### Initialize String
+
+-More Convenient way!
+
+```C
+int main() {
+	char text[20] = {'h', 'e', 'l', 'l', 'o','\0' }
+
+	//or,
+	char text[20] = "hello";
+	// you can change the variable
+	// They are exactly same thing
+	text[0] = 'j';
+
+}
+```
+
+- So in the array, the rest elements, is all `\0
+
+```C
+char greet1[10] = "Hello";
+// Where is the momery? global if that is decleared global/static if inside the function
+char *greet2 = malloc(sizeof(char) * 10);
+strncpy(greet2, greet1, 10);
+// greet2 is on the stack
+// memory allocated is on heap
+const char *greet3 = "hello";
+// string literal are stored in read only memory and modifying a string literal will result in an error, bus error or segmentation fault
+```
+
+### String Literal
+
+- **String Literal** is the string that cannot be changed
+
+```c
+char *text = "hello"; // String Literal
+```
+
+- `text` points to the fist char of the string.
+
+- That is a **constant**, causes **bus error**
+
+### Common Mistake (about null terminator)
+
+```c
+char text[4];
+text[0] = 'p';
+text[1] = 'l';
+text[2] = 'u';
+text[3] = 'm';
+printf("%s", text);
+```
+
+- Since the `printf` didn't read the null terminator, it will continue to print until encounter the null terminator.
+
+### Methods/Properties
+
+- On a array, `sizeof` always gives the number of bytes occupied by the array.
+- **Compile-time** operation, it doesn't look at the contents of the array at all.
+
+```c
+char weekday [10] = "monday";
+printf ("size of string: %lu\n", sizeof(weekday))
+```
+
+- `%lu` means unsigned long integer.
+
+#### String length
+
+- If we have two String and use `str1 + str2` to concatenate the string, it won't work
+
+```c
+#include <string.h>
+
+char weekday [10] = "monday";
+printf ("Length of string: %lu\n", strlen(weekday))
+```
+
+- `strlen` , not including the null terminating character.
+- When it encounter the `\0`, mark the string end.
+- So, in the next example, the output is 2.
+
+```c
+char text[10];
+text[0] = 'a';
+text[1] = 'b';
+text[2] = '\0';
+text[3] = 'c';
+text[4] = 'd';
+printf("%d\n", strlen(text));
+```
+
+#### Copying String
+
+- When copy a string, we overwrite it was previously there; when we concatenate a string, we are adding to the end of what was previously there.
+
+`char *strcpy(char *s1, const char *s2);`
+
+- `strcpy` copy the characters from string s2 to the beginning of array s1. It will overwrite what is on the s1, but s1 isn't required to be a string when strcpy is called.
+- But s2 is required to be a string when called. s2 can be _string literal_ or _char array_ includes a null terminator.
+
+- **Unsafe** function. When the first s1 is smaller than the size of s2, some compiler may work, but will raise problem.
+
+- Safe version - `strncpy`
+
+`char *strncpy(char *s1, const char *s2, int n);`
+
+- The new `n` parameter indicated the maximum number of characters that s1 can hold.
+- It still has problem. It cant stop until find the first null termination char in s2. So null termination char in s1 is missed.
+
+- if `char s1[5]`, we need to say that `s1[4] = '\0';`
+
+- If we want to set the value of string,
+
+```c
+char delicious[30];
+strcpy(delicious, "ice cream");
+```
+
+#### String concatenation
+
+`char *strcat(char *s1, const char *s2);`
+
+- Add the characters from s2 to the ending of string s1 (start of the first null terminator).
+- Both s1 and s2 must be strings before calling strcat.
+- It didn't write the null terminator.
+
+- **UNSAFE**
+
+`char *strncat(char *s1, const char *s2, int n);`
+
+- Safe version. `int n` is the maximum char, not including the null terminator, that should be copied from s2 to the end of s1.
+- Unlike the `strncpy`, strncat will always add a null terminator to s1.
+
+```c
+strncat(s1, s3, sizeof(s1) - strlen(s1) - 1)
+```
+
+- `-1` is to make room for the null terminator.
+
+#### Searching String
+
+##### Searching for a single char
+
+`char *strchr(const char *s, int c);`
+
+- First parameter is the string to search
+- second parameter is the string to search for.
+- It searches for the character from left to right.
+
+- Return the pointer to the char was found, or `null`
+
+```c
+char s1[30] = ",,,";
+char *p;
+p = strchr(s1, 'v');
+
+if (p == null) {...}
+else {
+	printf("character found at index %d\n", p - s1);
+}
+```
+
+- In c, when we do two pointer difference, the result is the number of elements between the two pointers, not the difference in their raw memory addresi999s.
+
+##### String Searching for String
+
+`char *strstr(const char *s1, const char *s2);`
+
+- searches from left to right in s1 for the first occurrence of the substring s2.
+- if s2 is found in s1, `strstr` returns a pointer to the character of s1 that begins the match with s2.
+
+## Structs
+
+- Use to organize data when the type are not same.
+- We need to use `dot notation` to access
+- Things in the `structure` called `members`
+
+### Example:
+
+```c
+struct student {
+	char first_name[20];
+	char last_name[20];
+	int year;
+	float gpa;
+};
+// struct already allocated the memory for the struct
+struct student good_student;
+// We cannot use student.name = "smth", it will point to the read-only memory
+strcpy(good_student.first_name, "Jo");
+strcpy(good_student.last_name, "smith");
+good_student.year = 2;
+good_student.gap = 3.2;
+```
+
+### Using Struct in Functions
+
+- For an array, when we pass an array to the function, we pass the original one. So any change in the function will change the content of array.
+
+```c
+void change(int numbers[]) {
+	numbers[0] = 80;
+}
+int main(void) {
+	int my_array[5];
+	my_array[0] = 40;
+	change(my_array);
+	// output is 80
+}
+```
+
+- But for the `struct`, that is different. If we only pass the struct as the parameter to the function, everything will be a copy of the struct in the main function (including the array inside the struct). So, we need to pass the pointer to the parameter to change the original array.
+
+```c
+void change(struct student *s) {
+	strcpy((*s).first_naem, "adam");
+	(*s).gpa = 4.0;
+}
+int main (void) {
+	change(&good_student);
+}
+// The output is expected.
+```
+
+#### `->` operation
+
+```c
+struct student s;
+struct student *p;
+..
+p = &s;
+(*p).gpa = 3.8;
+p->year = 1;
+strcpy(p->first_name, "hanrick");
+```
+
+- `p->first_name` is true a pointer.
+
+- If we want pass the `char *name` to the `p->first_name`, we don't need dereference.
+
+`strcpy(s->name, name);`
+
+## Linked Struct.
+
+### Difference with array
+
+| Difference         | Array                          | Linked List/structure                                             |
+| ------------------ | ------------------------------ | ----------------------------------------------------------------- |
+| Implementation     | build into C language          | user-defined                                                      |
+| Access and Storage | Use indices to fetch and store | requires "traverse" function to go over elements in the structure |
+| size               | fixed size                     | dynamic size                                                      |
+
+![[Screenshot 2025-01-26 at 11.02.49 AM.png]]
+
+- `front` is a pointer hold the address of the first node in the list.
+- Each node requires the `next` pointer to linked to the next node in the structure.
+- Last node has nothing to point to, the value is null.
+
+```c
+typedef struct node {
+    int value;              // Integer value
+    struct node *next;      // Pointer to another node
+} Node;
+```
+
+### Traverse.
+
+- We need allocate the memory of the node in the heap by `malloc`
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct node {
+    int value;
+    struct node *next;
+} Node;
+
+Node *create_node(int num, Node *next) {
+    Node *new_node = malloc(sizeof(Node));
+    new_node->value = num;
+    new_node->next = next;
+    return new_node;
+}
+
+int main() {
+
+    Node *front = NULL;
+
+    front = create_node(3, front);
+    front = create_node(2, front);
+    front = create_node(1, front);
+
+    Node *curr = front;
+    while (curr != NULL) {
+        printf("%d\n", curr->value);
+        curr = curr->next;
+    }
+    return 0;
+}
+```
+
+- First, use `typedef` to give a new name: Node.
+- Then declare a node pointer called `*front` , the only `Node` variable is `front`.
+- `curr` is not a pointer to pointer. It is a point as same as `front`. If that is a double pointer, it should define by `**curr`
+
+### Insert
+
+- Create a new node to be added
+- Add the new node to the list by modifying the pointer to correct order.
+
+```c
+/* Insert a new node with the value num into this position of list front. */
+void insert(int num, Node *front, int position) {
+    Node *curr = front;
+    for (int i = 0; i < position - 1; i++) {
+        curr = curr->next;
+    }
+    printf("Currently at: %d\n", curr->value);
+
+    Node *new_node = create_node(num, curr->next);
+    curr->next = new_node;
+}
+```
+
+#### Testing Insertion.
+
+- With edge cases
+
+```c
+int insert(int num, Node **front_ptr, int position) {
+    Node *curr = *front_ptr;
+
+    if (position == 0) {
+        *front_ptr = create_node(num, *front_ptr);
+        return 0;
+    }
+
+    for (int i = 0; i < position - 1 && curr != NULL; i++) {
+        curr = curr->next;
+    }
+    if (curr == NULL) {
+        return -1;
+    }
+    Node *new_node = create_node(num, curr->next);
+    curr->next = new_node;
+
+    return 0;
+}
+```

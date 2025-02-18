@@ -1,0 +1,230 @@
+# A2 Warm Up
+
+```sql
+ssh username@dbsrv1.teach.cs.toronto.edu
+```
+
+```
+SET search_path TO AirTravelWarmup, public;
+```
+
+Write SQL queries for each of the following:
+
+1. Find all pairs of passengers such that they have the same last name and booked a seat in the same ﬂight within 1 hour of each other. Report their ﬁrstnames and lastname. Duplicates are ﬁne for this question as some passengers might have done it multiple times.
+
+```sql
+SELECT p1.last_name, p1.first_name, p2.first_name
+FROM passenger p1, passenger p2, booking b1, booking b2
+WHERE p1.last_name = p2.last_name
+AND b1.passenger = p1.pid
+AND b2.passenger = p2.pid
+AND (b1.date_time - b2.date_time) <= INTERVAL '1 hour'
+AND b1.passenger <> b2.passenger
+AND b1.flight = b2.flight;
+
+
+```
+
+Passenger:
+
+```text
+pid | first_name | last_name  |               email
+-----+------------+------------+-----------------------------------
+   1 | Waneta     | Williams   | Waneta_Williams@yahoo.com
+   2 | Craig      | Setzer     | Craig.Setzer@yahoo.ca
+   3 | Richard    | Landry     | Richard.Landry@custom_domain.ca
+   4 | Frankie    | Smallwood  | Frankie_Smallwood@gmail.com
+```
+
+Booking:
+
+```sql
+ bid | passenger | seat | flight | price |      date_time
+-----+-----------+------+--------+-------+---------------------
+   1 |        32 |  854 |      1 |   772 | 2022-07-16 10:00:00
+   2 |        14 |  857 |      1 |   433 | 2022-06-05 10:00:00
+   3 |        33 |    6 |      2 |   851 | 2023-03-07 10:00:00
+   4 |        27 |   72 |      2 |  1261 | 2023-03-02 10:00:00
+   5 |         6 |   14 |      2 |   817 | 2023-04-15 10:00:00
+```
+
+2.  Find the total number of operational airports per country. We deﬁne an airport to be operational if at least one ﬂight departs from or arrives at that airport. Only give countries which have at least two airports. Report the country name and the count.
+
+```sql
+SELECT city.country, count(airport) as Operational_airport
+FROM airport, city
+WHERE airport.city = city.cid
+AND
+EXISTS (
+	SELECT * FROM route
+	WHERE route.source = airport.code
+	OR route.destination = airport.code
+)
+GROUP BY city.country
+HAVING count(country)>=2;
+```
+
+airport
+
+```psql
+ code |                       name                       | city
+------+--------------------------------------------------+------
+ YTZ  | Billy Bishop Toronto City Airport                |    1
+ LGA  | New York LaGuardia                               |    2
+ BUF  | Buffalo Niagara International Airport            |    3
+ ATL  | Hartsfield–Jackson Atlanta International Airport |    4
+ LAX  | Los Angeles International Airport                |    5
+ ORD  | O'Hare International Airport                     |    6
+ DFW  | Dallas/Fort Worth International Airport          |    7
+ DEN  | Denver International Airport                     |    8
+```
+
+city
+
+```text
+cid |     name      |       country
+-----+---------------+----------------------
+   1 | Toronto       | Canada
+   2 | New York      | USA
+   3 | Buffalo       | USA
+   4 | Atlanta       | USA
+   5 | Los Angeles   | USA
+   6 | Chicago       | USA
+   7 | Dallas        | USA
+   8 | Denver        | USA
+   9 | San Francisco | USA
+  10 | Seattle       | USA
+  11 | Las Vegas     | USA
+  12 | Miami         | USA
+  13 | London        | United Kingdom
+```
+
+route
+
+```
+flight_num | airline | source | destination
+------------+---------+--------+-------------
+ AC314      | AC      | YYZ    | HND
+ AC564      | AC      | YYZ    | LHR
+ AC714      | AC      | LHR    | YYZ
+ AC181      | AC      | YYZ    | LGA
+ AC364      | AC      | YVR    | LGA
+```
+
+3.  For each airline, get a count of the number of planes that are small, medium, and large. We’ll deﬁne a large plane as one that has all three seat classes and _at least_ 45 rows of seating, and a medium plane as one which is not large and that has at least two seat classes and a minimum of 30 rows of seating. All other planes that are not large or medium are considered small.
+
+```sql
+-- Warmup Query 3
+
+-- You must not change the next 2 lines or the table or type definition.
+SET SEARCH_PATH TO AirTravelWarmup;
+DROP TABLE IF EXISTS wu3 CASCADE;
+
+DROP TYPE IF EXISTS size_type CASCADE;
+CREATE TYPE AirTravelWarmup.size_type AS ENUM (
+    'large', 'medium', 'small'
+);
+
+CREATE TABLE wu3 (
+    airline_code CHAR(2),
+    size size_type NOT NULL,
+    num_planes int NOT NULL
+);
+
+-- Do this for each of the views that define your intermediate steps.
+-- (But give them better names!) The IF EXISTS avoids generating an error
+-- the first time this file is imported.
+-- If you do not define any views, you can delete the lines about views.
+-- DROP VIEW IF EXISTS intermediate_step CASCADE;
+
+-- Define views for your intermediate steps here:
+-- CREATE VIEW intermediate_step AS ... ;
+
+-- Your query that answers the question goes below the "insert into" line:
+INSERT INTO wu3
+SELECT
+
+	airline AS airline_code,
+	plane_size AS size,
+	COUNT(*) AS num_planes
+FROM
+	(SELECT plane.airline,
+		CASE
+			WHEN (count(DISTINCT seat.class) >= 3
+			AND max(seat.row) >= 45)
+			THEN 'large'
+			WHEN (count(DISTINCT seat.class) >= 2
+			AND max(seat.row) >= 30)
+			THEN 'medium'
+			ELSE 'small'
+			END AS plane_size
+	FROM seat, plane
+	WHERE seat.plane = plane.tail_number
+	GROUP BY plane.airline, plane.tail_number
+	) plane_size
+
+GROUP BY airline, plane_size;
+
+
+```
+
+plane
+
+```
+ tail_number |    model    | airline
+-------------+-------------+---------
+ S95PF       | Boeing 737  | AC
+ D84KL       | Boeing 737  | AC
+ Q21PS       | Boeing 737  | AC
+ J00YZ       | Boeing 737  | AC
+ E48QP       | Airbus A320 | AC
+ Z50LZ       | Airbus A320 | AC
+ D14DC       | Airbus A320 | AC
+```
+
+seat
+
+```
+ sid  | plane | row | letter |  class
+------+-------+-----+--------+----------
+    1 | S95PF |   1 | A      | first
+    2 | S95PF |   1 | B      | first
+    3 | S95PF |   1 | C      | first
+    4 | S95PF |   1 | D      | first
+    5 | S95PF |   2 | A      | first
+    6 | S95PF |   2 | B      | first
+    7 | S95PF |   2 | C      | first
+    8 | S95PF |   2 | D      | first
+    9 | S95PF |   3 | A      | first
+   10 | S95PF |   3 | B      | first
+   11 | S95PF |   3 | C      | first
+   12 | S95PF |   3 | D      | first
+   13 | S95PF |   4 | A      | first
+   14 | S95PF |   4 | B      | first
+   15 | S95PF |   4 | C      | first
+   16 | S95PF |   4 | D      | first
+   17 | S95PF |   5 | A      | business
+```
+
+airline
+
+```
+ code |       name
+------+------------------
+ AC   | Air Canada
+ WS   | West Jet
+ BA   | British Airways
+ TS   | Air Transat
+ UA   | United Airlines
+ JL   | Japan Airlines
+ EY   | Etihad Airways
+ LH   | Lufthansa
+```
+
+As part of this query, you will need to take a look at the PostgreSQL documentation to learn about the command CAST. We have provided a type for you to use to represent the size of a plane.
+
+copyback
+
+```bash
+scp -r username@dbsrv1.teach.cs.toronto.edu:/h/u10/c3/00/username/a2warmup /Users/user/Desktop
+```
