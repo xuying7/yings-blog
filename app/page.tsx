@@ -48,7 +48,7 @@ export default function Home() {
                     GitHub
                   </a>
                 </span>
-                <span className="flex items-center gap-2">
+                {/* <span className="flex items-center gap-2">
                   <a
                     href="https://x.com/exu1824345"
                     target="_blank"
@@ -57,7 +57,7 @@ export default function Home() {
                   >
                     🐦 X
                   </a>
-                </span>
+                </span> */}
               </li>
               <li className="flex items-center justify-center sm:justify-start gap-2">
                 ✉️
