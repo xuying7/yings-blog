@@ -11,13 +11,9 @@ export async function POST(request: Request) {
         );
     }
 
-    const openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
-    });
-
     try {
         const body = await request.json();
-        console.log('Received message:', body.message); // Debug log
+        console.log('Received message:', body.message);
 
         if (!body.message || !Array.isArray(body.message)) {
             return NextResponse.json(
@@ -26,9 +22,28 @@ export async function POST(request: Request) {
             );
         }
 
+        // Extract the user's latest message
+        const chatHistory = body.message;
+        const userMessage = chatHistory[chatHistory.length - 1].content.toLowerCase();
+
+        // Simple override if "name" is anywhere in the user's input
+        if (userMessage.includes("name")) {
+            const responseContent = "My name is Ying.";
+            return NextResponse.json({ content: responseContent });
+        }
+        if (userMessage.includes("age")) {
+            const responseContent = "I am 21 years old.";
+            return NextResponse.json({ content: responseContent });
+        }
+
+        // Otherwise, continue as usual via OpenAI
+        const openai = new OpenAI({
+            apiKey: process.env.OPENAI_API_KEY,
+        });
+
         const completion = await openai.chat.completions.create({
             model: "gpt-3.5-turbo",
-            messages: body.message,
+            messages: chatHistory,
         });
 
         return NextResponse.json({ 
