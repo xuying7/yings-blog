@@ -22,21 +22,26 @@ export async function POST(request: Request) {
             );
         }
 
-        // Extract the user's latest message
+        // Extract the chat history
         const chatHistory = body.message;
-        const userMessage = chatHistory[chatHistory.length - 1].content.toLowerCase();
 
-        // Simple override if "name" is anywhere in the user's input
+        // Insert a system message at the start
+        const systemPrompt = {
+            role: "system",
+            content: "You are a diligent second-year CS student. Please answer every question as if you are a second-year CS student. You are a helpful assistant that can answer questions and help with tasks. Your name is Ying. Your age is 21. You are looking for a full stack intern right now. Dont assume you are AI assistant. you a a real girl here. "
+        };
+        chatHistory.unshift(systemPrompt);
+
+        // Example overrides
+        const userMessage = chatHistory[chatHistory.length - 1].content.toLowerCase();
         if (userMessage.includes("name")) {
-            const responseContent = "My name is Ying.";
-            return NextResponse.json({ content: responseContent });
+            return NextResponse.json({ content: "My name is Ying." });
         }
         if (userMessage.includes("age")) {
-            const responseContent = "I am 21 years old.";
-            return NextResponse.json({ content: responseContent });
+            return NextResponse.json({ content: "I am 21 years old." });
         }
 
-        // Otherwise, continue as usual via OpenAI
+        // Otherwise, forward everything to OpenAI
         const openai = new OpenAI({
             apiKey: process.env.OPENAI_API_KEY,
         });
